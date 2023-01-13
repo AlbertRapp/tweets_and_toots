@@ -21,13 +21,15 @@ Next update: I'll continue development when I get back from vacation after Janua
 
 - Allow multiple image uploads
 - Use separate amount of tweets and toots
-- Fix automatic text area height adjustment for second row of text cards
+- ~~Fix automatic text area height adjustment for second row of text cards~~
 - Make theme pretty with {fresh} or {bslib}
 - Figure out why message collection does not work in RStudio web browser (currently low priority since it works in Firefox and Chrome)
 
 ### Backend
 
-- Create backend functions to interact with Twitter ({rtweet}) and Mastodon API ({rtoot})
+- Create backend functions to interact 
+    - with Twitter (`{rtweet}`)
+    - Mastodon API (`{rtoot}`)
 - Figure out how to store data permanently (after closing app)
 - Figure out how to schedule tasks (i.e. schedule thread to be published as specified time)
 

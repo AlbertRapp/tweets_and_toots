@@ -3,45 +3,11 @@ library(shiny)
 library(bs4Dash)
 library(shinyjs)
 
-generate_resize_js_code <- function(element_id) {
-  glue::glue("document.addEventListener('DOMNodeInserted', function(event) {
-    var observe;
-    if (window.attachEvent) {
-      observe = function (element, event, handler) {
-        element.attachEvent('on'+event, handler);
-      };
-    }
-    else {
-      observe = function (element, event, handler) {
-        element.addEventListener(event, handler, false);
-      };
-    }
-    function init () {
-      var text = document.getElementById('<<element_id>>');
-      function resize () {
-        text.style.height = 'auto';
-        text.style.height = text.scrollHeight+'px';
-      }
-      /* 0-timeout to get the already changed text */
-        function delayedResize () {
-          window.setTimeout(resize, 0);
-        }
-      observe(text, 'change',  resize);
-      observe(text, 'cut',     delayedResize);
-      observe(text, 'paste',   delayedResize);
-      observe(text, 'drop',    delayedResize);
-      observe(text, 'keydown', delayedResize);
 
-      resize();
-    };init()
-  })
-  ", .open = "<<", .close = ">>")
-}
 
 platform_boxUI <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$script(generate_resize_js_code(ns('message'))),
     box(
       textAreaInput(ns('message'), label = NULL),
       textOutput(ns('n_char')),
@@ -112,18 +78,15 @@ ui <- dashboardPage(
   ),
   body = dashboardBody(
     
-    useShinyjs(),
-    extendShinyjs(
-      script = 'get_messages.js',
-      functions = c('getMessages')
-    ),
+    tags$script(readLines('www/resize_textareas.js') |> HTML()),
+    tags$script(readLines('www/get_messages.js') |> HTML()),
     tabItems(
       tabItem(
         'writer_tab',
         sortable(
           textcardUI('textcard1'),
           actionButton('add_btn', label = 'Add Msg'),
-          actionButton('collect_messages', label = 'Collect')
+          actionButton('collect_messages', label = 'Collect', onclick = 'getMessages("bla");')
         )
       )
     )
@@ -149,16 +112,18 @@ server <- function(input, output, session) {
   msgs_twitter_reactive <- reactive({input$msgs_twitter})
   msgs_mastodon_reactive <- reactive({input$msgs_mastodon})
   
-  observe({
-    js$getMessages()
-  }) |> bindEvent(input$collect_messages)
+  # observe({
+  #   js$getMessages()
+  # }) |> bindEvent(input$collect_messages)
  
   observe({
+    req(msgs_twitter_reactive())
     print(msgs_twitter_reactive())
-  }) |> bindEvent(msgs_twitter_reactive())
+  }) |> bindEvent(msgs_twitter_reactive(), input$collect_messages)
   observe({
+    req(msgs_mastodon_reactive())
     print(msgs_mastodon_reactive())
-  }) |> bindEvent(msgs_mastodon_reactive())
+  }) |> bindEvent(msgs_mastodon_reactive(), input$collect_messages)
 }
 
 shinyApp(ui, server)
