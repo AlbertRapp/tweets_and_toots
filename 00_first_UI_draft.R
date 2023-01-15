@@ -108,7 +108,7 @@ ui <- dashboardPage(
           textcardUI('textcard1'),
           actionButton('add_btn', label = 'Add Msg'),
           actionButton('collect_messages', label = 'Collect', onclick = 'getMessages("bla");'),
-          actionButton('send_tweets', label = 'Sent Tweets')
+          actionButton('send_tweets', label = 'Sent tweets')
         )
       )
     )
