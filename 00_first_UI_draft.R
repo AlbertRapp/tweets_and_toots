@@ -3,8 +3,6 @@ library(shiny)
 library(bs4Dash)
 library(shinyjs)
 
-
-
 platform_boxUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -66,6 +64,29 @@ textcardServer <- function(id) {
   )
 }
 
+
+send_messages <- function(msgs, auth_file) {
+  rtweet::auth_as(auth_file)
+  token <-  rtweet::auth_get()
+  username <- token$credentials$screen_name
+  
+  for (tweet_nmbr in seq_along(msgs)) {
+    reply_status_id <- NULL
+    if (tweet_nmbr > 1) {
+      previous_timeline <- rtweet::get_timeline(user = username, n = 10)
+      reply_status_id <- previous_timeline |> 
+        dplyr::filter(stringr::str_detect(full_text, msgs[tweet_nmbr - 1])) |> 
+        dplyr::pull(id_str)
+    } 
+    
+    rtweet::post_tweet(
+      status = msgs[tweet_nmbr],
+      in_reply_to_status_id = reply_status_id,
+      token = token
+    )
+  }
+}
+
 ui <- dashboardPage(
   header = dashboardHeader(),
   sidebar = dashboardSidebar(
@@ -86,7 +107,8 @@ ui <- dashboardPage(
         sortable(
           textcardUI('textcard1'),
           actionButton('add_btn', label = 'Add Msg'),
-          actionButton('collect_messages', label = 'Collect', onclick = 'getMessages("bla");')
+          actionButton('collect_messages', label = 'Collect', onclick = 'getMessages("bla");'),
+          actionButton('send_tweets', label = 'Sent Tweets')
         )
       )
     )
@@ -111,19 +133,21 @@ server <- function(input, output, session) {
   
   msgs_twitter_reactive <- reactive({input$msgs_twitter})
   msgs_mastodon_reactive <- reactive({input$msgs_mastodon})
-  
-  # observe({
-  #   js$getMessages()
-  # }) |> bindEvent(input$collect_messages)
  
   observe({
     req(msgs_twitter_reactive())
     print(msgs_twitter_reactive())
   }) |> bindEvent(msgs_twitter_reactive(), input$collect_messages)
+  
   observe({
     req(msgs_mastodon_reactive())
     print(msgs_mastodon_reactive())
   }) |> bindEvent(msgs_mastodon_reactive(), input$collect_messages)
+  
+  observe({
+    req(msgs_twitter_reactive())
+    send_messages(msgs_twitter_reactive(), 'test-account-auth.rds')
+  }) |> bindEvent(input$send_tweets)
 }
 
 shinyApp(ui, server)

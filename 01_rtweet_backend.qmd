@@ -1,0 +1,66 @@
+
+
+
+```{r}
+msgs <- c(
+  'Sav11111ername  🧵🧵🧵',
+  'Save2222th emojis 🧵',
+  'Save33333rname '
+)
+
+set.seed(524091)
+n_imgs <- floor(3 * runif(3))
+media_list <- purrr::map(n_imgs, ~rep('random_img.png', .)) |> 
+  purrr::map(\(x) if (isTruthy(x)) x else NULL)
+
+media_list <- purrr::map(n_imgs, ~rep('random_img.png', .)) |> 
+  purrr::map(\(x) if (isTruthy(x)) x else NULL)
+
+send_messages <- function(msgs, auth_file) {
+  rtweet::auth_as(auth_file)
+  token <-  rtweet::auth_get()
+  username <- token$credentials$screen_name
+  
+  for (tweet_nmbr in seq_along(msgs)) {
+    reply_status_id <- NULL
+    if (tweet_nmbr > 1) {
+      previous_timeline <- rtweet::get_timeline(user = username, n = 10)
+      reply_status_id <- previous_timeline |> 
+        dplyr::filter(stringr::str_detect(full_text, msgs[tweet_nmbr - 1])) |> 
+        dplyr::pull(id_str)
+    } 
+    
+    rtweet::post_tweet(
+      status = msgs[tweet_nmbr],
+      in_reply_to_status_id = reply_status_id,
+      token = token,
+      media = media_list[[tweet_nmbr]],
+      media_alt_text = rep('', length(media_list[[tweet_nmbr]]))
+    )
+  }
+}
+
+send_messages(msgs, 'test-account-auth.rds')
+
+
+```
+
+
+```{r}
+rtweet::auth_as('test-account-auth.rds')
+token <-  rtweet::auth_get()
+n_imgs <- ceiling(4 * runif(1))
+rtweet::post_tweet(
+  status = sample(letters, 23, replace = T) |> paste0(collapse = ''),
+  token = token,
+  media = NULL,
+  media_alt_text = ''
+)
+```
+
+
+```{r}
+
+
+```
+
